@@ -34,7 +34,7 @@ import org.yaml.snakeyaml.Yaml;
  * @author Steve Jiang (@sjiang) <gh at iamsteve com>
  */
 public class ParserTest {
-  final String TEST_RESOURCE_PATH = "/ua_parser/";
+  final String TEST_RESOURCE_PATH = "/ua_parser/legacy/";
   Yaml yaml = new Yaml();
   Parser parser;
 
@@ -126,7 +126,9 @@ public class ParserTest {
       if (testCase.containsKey("js_ua")) continue;
 
       String uaString = testCase.get("user_agent_string");
-      assertThat(uaString, parser.parseUserAgent(uaString), is(UserAgent.fromMap(testCase)));
+      UserAgent os = parser.parseUserAgent(uaString);
+      UserAgent fromMap = UserAgent.fromMap(testCase);
+      assertThat(uaString, os, is(fromMap));
     }
   }
 

@@ -1,9 +1,25 @@
+/**
+ * Copyright 2012 Twitter, Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ua_parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,27 +41,26 @@ public class DeviceParser {
       return null;
     }
 
-    Map<String, String> replacements = null;
+    String device = null;
     for (DevicePattern p : patterns) {
-      if ((replacements = p.match(agentString)) != null) {
+      if ((device = p.match(agentString)) != null) {
         break;
       }
     }
+    if (device == null) device = "Other";
 
-    if (replacements == null) {
-      return new Device("Other", null, null);
-    }
-    else {
-      return new Device(replacements.get("device_replacement"), replacements.get("brand_replacement"), replacements.get("model_replacement"));
-    }
+    return new Device(device);
   }
 
+  /**
+   * Constructs a thread-safe DeviceParser.
+   */
   public static DeviceParser fromList(List<Map<String,String>> configList) {
     List<DevicePattern> configPatterns = new ArrayList<DevicePattern>();
     for (Map<String,String> configMap : configList) {
       configPatterns.add(DeviceParser.patternFromMap(configMap));
     }
-    return new DeviceParser(configPatterns);
+    return new DeviceParser(new CopyOnWriteArrayList<>(configPatterns));
   }
 
   protected static DevicePattern patternFromMap(Map<String, String> configMap) {
@@ -55,64 +70,47 @@ public class DeviceParser {
     }    
     Pattern pattern = "i".equals(configMap.get("regex_flag")) // no ohter flags used (by now) 
     		? Pattern.compile(regex, Pattern.CASE_INSENSITIVE) : Pattern.compile(regex);
-    return new DevicePattern(pattern, configMap.get("device_replacement"), configMap.get("brand_replacement"), configMap.get("model_replacement"));
+    return new DevicePattern(pattern, configMap.get("device_replacement"));
   }
 
   protected static class DevicePattern {
 	private static final Pattern SUBSTITUTIONS_PATTERN = Pattern.compile("\\$\\d");
     private final Pattern pattern;
     private final String deviceReplacement;
-    private final String brandReplacement;
-    private final String modelReplacement;
 
-    public DevicePattern(Pattern pattern, String deviceReplacement, String brandReplacement, String modelReplacement) {
+    public DevicePattern(Pattern pattern, String deviceReplacement) {
       this.pattern = pattern;
       this.deviceReplacement = deviceReplacement;
-      this.brandReplacement = brandReplacement;
-      this.modelReplacement = modelReplacement;
     }
 
-    public Map<String, String> match(String agentString) {
+    public String match(String agentString) {
       Matcher matcher = pattern.matcher(agentString);
       if (!matcher.find()) {
         return null;
       }
-
-      Map<String, String> replacements = new HashMap<String, String>();
-      replacements.put("device_replacement", getReplacement(deviceReplacement, matcher, 1));
-      replacements.put("brand_replacement", getReplacement(brandReplacement, matcher, -1));
-      replacements.put("model_replacement", getReplacement(modelReplacement, matcher, 1));
-
-      return replacements;
-    }
-
-    private String getReplacement(String replacement, Matcher matcher, int groupNum) {
-      String replacementOut = null;
-      if (replacement != null) {
-        if (replacement.contains("$")) {
-          replacementOut = replacement;
-          for (String substitution : getSubstitutions(replacement)) {
-            int i = Integer.valueOf(substitution.substring(1));
-            String replacementGroup = matcher.groupCount() >= i && matcher.group(i) != null
-                    ? Matcher.quoteReplacement(matcher.group(i)) : "";
-            replacementOut = replacementOut.replaceFirst("\\" + substitution, replacementGroup);
+      String device = null;
+      if (deviceReplacement != null) {
+        if (deviceReplacement.contains("$")) {
+          device = deviceReplacement;
+          for (String substitution : getSubstitutions(deviceReplacement)) {    	  
+        	int i = Integer.valueOf(substitution.substring(1));
+            String replacement = matcher.groupCount() >= i && matcher.group(i) != null 
+        			  ? Matcher.quoteReplacement(matcher.group(i)) : "";
+              device = device.replaceFirst("\\" + substitution, replacement);  
           }
-          replacementOut = replacementOut.trim();
-        } else {
-          replacementOut = replacement;
-        }
-      } else if (groupNum > 0 && matcher.groupCount() >= 1) {
-        replacementOut = matcher.group(groupNum);
+          device = device.trim();
+    	} else {
+          device = deviceReplacement;
+        } 
+      } else if (matcher.groupCount() >= 1) {
+        device = matcher.group(1);
       }
 
-      if(replacementOut == null || replacementOut.isEmpty())
-        return null;
-      else
-        return replacementOut;
+      return device;
     }
     
-    private List<String> getSubstitutions(String replacement) {
-      Matcher matcher = SUBSTITUTIONS_PATTERN.matcher(replacement);
+    private List<String> getSubstitutions(String deviceReplacement) {
+      Matcher matcher = SUBSTITUTIONS_PATTERN.matcher(deviceReplacement);
       List<String> substitutions = new ArrayList<String>();
       while (matcher.find()) {
         substitutions.add(matcher.group());

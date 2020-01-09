@@ -7,11 +7,18 @@ The implementation uses the shared regex patterns and overrides from [regexes.ya
 Build:
 ------
 
+uap-java depends on the uap-core project therefore it uses a Git submodule to represent that dependency.  
+Before building uap-java, a copy of the uap-core project must be checked out within the local uap-java repository.  
+In order to do this, execute the following command (from the base `uap-java` folder) to initialize and checkout the submodule.  
+
 ```
-#first time:
-#git submodule update --init --recursive
-#then:
-git submodule update --recursive
+git submodule update --init --remote --checkout --recursive
+```
+
+you will then have the following folder `uap-java/uap-core` which contains the child repository.
+
+To build the project, execute
+```
 mvn package
 ```
 
@@ -38,9 +45,27 @@ System.out.println(c.os.minor);         // => "1"
 
 System.out.println(c.device.family);    // => "iPhone"
 ```
+On Mac OS X, the `gpg.executable` property should be `gpg2`.  
+
+### Instructions for Build/Deploy/Release  
+1. bump pom.xml version to non-snapshot version  
+1. commit and push to github  
+1. `mvn clean deploy -P ossrh`  
+1. log in to [Sonatype OSSRH](https://oss.sonatype.org/)  
+1. click Staging Repositories  
+1. find the release `comgithubua-parser-*`  
+1. verify the contents are ok  
+1. click Close (wait for validation steps under the Activity tab to complete)  
+1. click Release  
+1. bump pom.xml version to next snapshot version  
+1. commit and push to GitHub  
+1. update changelog wiki page  
 
 ### Instructions for Build/Deploy/Releas
 
+
+### Changelog
+Changelog can be found [here](https://github.com/ua-parser/uap-java/wiki#changelog).
 
 Author:
 -------

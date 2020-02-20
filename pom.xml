@@ -7,7 +7,7 @@
   <groupId>com.github.ua-parser</groupId>
   <artifactId>uap-java</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.6-mbr-SNAPSHOT</version>
+  <version>1.4.6-mbr</version>
   <name>User Agent Parser for Java</name>
 
   <description>
@@ -71,7 +71,6 @@
         </includes>
       </testResource>
     </testResources>
-
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

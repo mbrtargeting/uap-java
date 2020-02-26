@@ -4,6 +4,36 @@ ua_parser Java Library
 This is the Java implementation of [ua-parser](https://github.com/ua-parser).
 The implementation uses the shared regex patterns and overrides from [regexes.yaml](https://github.com/ua-parser/uap-core/blob/master/regexes.yaml).
 
+Update uap-core Version:
+------
+Clone the repository
+```
+git clone git@github.com:mbrtargeting/uap-java.git
+```
+
+Download submodule and set it to commit we want
+```
+git submodule update --init --recursive
+cd uap-core
+git checkout ${HASH of desired version commit}
+```
+
+Commit the changed version
+```
+cd ..
+git add uap-core
+git commit -m 'moved core to desired version'
+```
+
+Rebase top-level repository
+```
+git remote add upstream https://github.com/ua-parser/uap-java.git
+git fetch upstream
+git checkout ${YOUR BRANCH}
+git rebase upstream/master
+```
+
+
 Build:
 ------
 

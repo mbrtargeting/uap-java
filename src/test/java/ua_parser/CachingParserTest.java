@@ -14,12 +14,7 @@ import org.junit.Test;
  * @author niels
  *
  */
-public class CachingParserTest extends ParserTest {
-
-  @Before
-  public void initParser() throws Exception {
-    parser = new CachingParser();
-  }
+public class CachingParserTest extends CurrentParserTest {
 
   @Override
   Parser parserFromStringConfig(String configYamlAsString) throws Exception {

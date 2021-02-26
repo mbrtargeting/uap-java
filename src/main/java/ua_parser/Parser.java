@@ -29,19 +29,14 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  *
  * @author Steve Jiang (@sjiang) &lt;gh at iamsteve com&gt;
  */
-public class Parser {
+abstract public class Parser {
 
-  private static final String REGEX_YAML_PATH = "/ua_parser/legacy/regexes.yaml";
   private UserAgentParser uaParser;
   private OSParser osParser;
   private DeviceParser deviceParser;
 
-  public Parser() throws IOException {
-    this(Parser.class.getResourceAsStream(REGEX_YAML_PATH));
-  }
-
-  public Parser(InputStream regexYaml) {
-    initialize(regexYaml);
+  public Parser(InputStream regexYaml, boolean legacy) {
+    initialize(regexYaml, legacy);
   }
 
   public Client parse(String agentString) {
@@ -63,7 +58,7 @@ public class Parser {
     return osParser.parse(agentString);
   }
 
-  private void initialize(InputStream regexYaml) {
+  private void initialize(InputStream regexYaml, boolean legacy) {
     Yaml yaml = new Yaml(new SafeConstructor());
     @SuppressWarnings("unchecked")
     Map<String,List<Map<String,String>>> regexConfig = (Map<String,List<Map<String,String>>>) yaml.load(regexYaml);
@@ -72,7 +67,7 @@ public class Parser {
     if (uaParserConfigs == null) {
       throw new IllegalArgumentException("user_agent_parsers is missing from yaml");
     }
-    uaParser = UserAgentParser.fromList(uaParserConfigs);
+    uaParser = UserAgentParser.fromList(uaParserConfigs, legacy);
 
     List<Map<String,String>> osParserConfigs = regexConfig.get("os_parsers");
     if (osParserConfigs == null) {

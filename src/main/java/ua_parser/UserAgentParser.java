@@ -29,18 +29,20 @@ import java.util.regex.Pattern;
  */
 public class UserAgentParser {
   private final List<UAPattern> patterns;
+  private final boolean legacy;
 
-  public UserAgentParser(List<UAPattern> patterns) {
+  public UserAgentParser(List<UAPattern> patterns, boolean legacy) {
     this.patterns = patterns;
+    this.legacy = legacy;
   }
 
-  public static UserAgentParser fromList(List<Map<String,String>> configList) {
+  public static UserAgentParser fromList(List<Map<String,String>> configList, boolean legacy) {
     List<UAPattern> configPatterns = new ArrayList<UAPattern>();
 
     for (Map<String, String> configMap : configList) {
-      configPatterns.add(UserAgentParser.patternFromMap(configMap));
+      configPatterns.add(UserAgentParser.patternFromMap(configMap, legacy));
     }
-    return new UserAgentParser(configPatterns);
+    return new UserAgentParser(configPatterns, legacy);
   }
 
   public UserAgent parse(String agentString) {
@@ -57,7 +59,7 @@ public class UserAgentParser {
     return new UserAgent("Other", null, null, null);
   }
 
-  protected static UAPattern patternFromMap(Map<String, String> configMap) {
+  protected static UAPattern patternFromMap(Map<String, String> configMap, boolean legacy) {
     String regex = configMap.get("regex");
     if (regex == null) {
       throw new IllegalArgumentException("User agent is missing regex");
@@ -66,18 +68,22 @@ public class UserAgentParser {
     return(new UAPattern(Pattern.compile(regex),
                          configMap.get("family_replacement"),
                          configMap.get("v1_replacement"),
-                         configMap.get("v2_replacement")));
+                         configMap.get("v2_replacement"),
+                         legacy));
   }
 
   protected static class UAPattern {
     private final Pattern pattern;
     private final String familyReplacement, v1Replacement, v2Replacement;
+    private final Boolean legacy;
 
-    public UAPattern(Pattern pattern, String familyReplacement, String v1Replacement, String v2Replacement) {
+    public UAPattern(Pattern pattern, String familyReplacement, String v1Replacement,
+                     String v2Replacement, boolean legacy) {
       this.pattern = pattern;
       this.familyReplacement = familyReplacement;
       this.v1Replacement = v1Replacement;
       this.v2Replacement = v2Replacement;
+      this.legacy = legacy;
     }
 
     public UserAgent match(String agentString) {
@@ -127,6 +133,9 @@ public class UserAgentParser {
     }
     
     private boolean isBlank(String value) {
+      if (legacy) {
+        return value != null && value.isEmpty();
+      }
       return value == null || value.isEmpty();
     }
   }

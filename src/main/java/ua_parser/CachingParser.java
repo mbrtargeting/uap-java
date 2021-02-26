@@ -17,7 +17,7 @@ import org.apache.commons.collections4.map.LRUMap;
  *
  * @author Niels Basjes
  */
-public class CachingParser extends Parser {
+public class CachingParser extends CurrentParser {
 
     private Map<String, Client> cacheClient = null;
     private Map<String, UserAgent> cacheUserAgent = null;
